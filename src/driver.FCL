@@ -1,0 +1,82 @@
+FUNCTION_BLOCK
+    VAR_INPUT
+        speed : REAL;
+        angle : REAL;
+        distance : REAL;
+    END_VAR
+    VAR_OUTPUT
+        acceleration : REAL;
+        turn: REAL;
+    END_VAR
+
+
+    FUZZIFY speed
+        TERM slow := (0, 1) (5, 1) (10, 1) (15, 0);
+        TERM medium := (10, 0)  (30, 1)  (80, 1) (100, 0);
+        TERM fast := (80, 0)  (120, 1) (200, 1);
+    END_FUZZIFY
+
+
+    FUZZIFY angle
+        TERM left := (-180, 1) (-70, 1)  (-50, 0);
+        TERM littleLeft := (-70, 0)  (-50, 1) (-40, 1) (-20,0);
+        TERM center := (-40,0) (0, 1) (40, 0);
+        TERM littleRight := (20, 0) (40, 1) (50,1) (70,0);
+        TERM right := (50, 0)  (70, 1) (180, 1);
+    END_FUZZIFY
+
+    FUZZIFY distance
+        TERM veryNear := (0,1) (30, 1) (60, 0);
+        TERM near := (30, 0) (60, 1) (90, 1) (120, 0);
+        TERM medium := (90, 0) (180, 1) (270, 1)  (360, 0);
+        TERM far := (300, 0) (400, 1) (1800, 1);
+    END_FUZZIFY
+
+    DEFUZZIFY acceleration
+        TERM slowDown := (-70, 1) (-40, 1) (-10, 0);
+        TERM leave := (-15, 0) (-5, 1)  (5, 1) (15, 0);
+        TERM speedUp := (10, 0)  (30, 1) (50, 1);
+        METHOD : COG;
+        DEFAULT := 0;
+    END_DEFUZZIFY
+
+    DEFUZZIFY turn
+        TERM left := (-90, 1) (-80, 1) (-30, 1) (-20, 0);
+        TERM littleLeft := (-30, 0) (-20, 1) (-10, 1)  (0, 0);
+        TERM leave := (-20, 0)  (0, 1)  (20, 0);
+        TERM littleRight := (0, 0) (10, 1) (20, 1) (30, 0);
+        TERM right :=  (20, 0) (30, 1) (80, 1) (90, 1);
+        METHOD : COG;
+        DEFAULT := 0;
+    END_DEFUZZIFY
+
+    RULEBLOCK first
+
+        AND: MIN;
+        ACT: MIN;
+
+        RULE 0: IF speed IS slow AND distance IS veryNear THEN acceleration IS slowDown;
+        RULE 1: IF speed IS slow AND distance IS near THEN acceleration IS leave;
+        RULE 2: IF speed IS medium AND distance IS near THEN acceleration IS slowDown;
+        RULE 3: IF speed IS fast AND distance IS near THEN acceleration IS slowDown;
+
+        RULE 4: IF speed IS medium AND distance IS veryNear THEN acceleration IS slowDown;
+        RULE 5: IF speed IS slow AND distance IS medium THEN acceleration IS speedUp;
+        RULE 6: IF speed IS medium AND distance IS medium THEN acceleration IS leave;
+        RULE 7: IF speed IS fast AND distance IS medium THEN acceleration IS slowDown;
+
+        RULE 8: IF speed IS fast AND distance IS veryNear THEN acceleration IS slowDown;
+        RULE 9: IF speed IS slow AND distance IS far THEN acceleration IS speedUp;
+        RULE 10: IF speed IS medium AND distance IS far THEN acceleration IS speedUp;
+        RULE 11: IF speed IS fast AND distance IS far THEN acceleration IS leave;
+
+        RULE 12: IF angle IS left THEN turn IS left;
+        RULE 13: IF angle IS littleLeft THEN turn IS littleLeft;
+        RULE 14: IF angle IS center THEN turn IS leave;
+        RULE 15: IF angle IS littleRight THEN turn IS littleRight;
+        RULE 16: IF angle IS right  THEN turn IS right;
+
+
+    END_RULEBLOCK
+
+END_FUNCTION_BLOCK
